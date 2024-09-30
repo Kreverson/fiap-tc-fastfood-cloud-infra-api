@@ -1,3 +1,18 @@
+variable "aws_region" {
+  description = "AWS região"
+  type = string
+}
+
+variable "state_file" {
+  description = "S3 Bucket state file"
+  type = string
+}
+
+variable "environment" {
+  description = "Ambiente (dev ou prod)"
+  type        = string
+}
+
 variable "cluster_name" {
   description = "Nome do cluster EKS"
   type        = string
@@ -41,9 +56,4 @@ variable "max_size" {
 variable "desired_size" {
   description = "Número desejado de nós no cluster"
   type        = number
-}
-
-variable "environment" {
-  description = "Ambiente (prod ou dev)"
-  type        = string
 }
