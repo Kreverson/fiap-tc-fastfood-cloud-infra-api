@@ -9,7 +9,7 @@ variable "state_file" {
 }
 
 variable "environment" {
-  description = "Ambiente (dev ou prod)"
+  description = "Ambiente (dev ou prd)"
   type        = string
 }
 
