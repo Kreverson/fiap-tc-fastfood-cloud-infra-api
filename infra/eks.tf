@@ -31,6 +31,7 @@ resource "aws_subnet" "eks_public" {
 }
 
 module "eks" {
+  version         = "17.24.0"
   source          = "terraform-aws-modules/eks/aws"
   cluster_name    = var.cluster_name
   cluster_version = "1.21"
