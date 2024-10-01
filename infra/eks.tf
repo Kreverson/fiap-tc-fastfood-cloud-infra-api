@@ -30,24 +30,88 @@ resource "aws_subnet" "eks_public" {
   depends_on = [aws_vpc.main_vpc]
 }
 
-module "eks" {
-  version         = "17.24.0"
-  source          = "terraform-aws-modules/eks/aws"
-  cluster_name    = var.cluster_name
-  subnets         = concat(aws_subnet.eks_private[*].id, aws_subnet.eks_public[*].id)
-  vpc_id          = aws_vpc.main_vpc.id
+resource "aws_eks_cluster" "eks_cluster" {
+  name     = "fastfood-cluster"
+  role_arn = aws_iam_role.eks_cluster_role.arn
 
-  node_groups = {
-    workers = {
-      desired_capacity = var.desired_size
-      max_capacity     = var.max_size
-      min_capacity     = var.min_size
-      instance_type    = var.instance_type
-    }
+  vpc_config {
+    subnet_ids = concat(aws_subnet.eks_private[*].id, aws_subnet.eks_public[*].id)
   }
 
-  tags = {
-    Environment = var.environment
-    Project     = "${var.environment}-fastfood-api"
+  depends_on = [
+    aws_iam_role_policy_attachment.eks_policy,
+    aws_iam_role_policy_attachment.vpc_cni_policy
+  ]
+}
+
+resource "aws_iam_role" "eks_cluster_role" {
+  name = "eks_cluster_role"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [{
+      Effect    = "Allow",
+      Principal = {
+        Service = "eks.amazonaws.com"
+      },
+      Action = "sts:AssumeRole"
+    }]
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "eks_policy" {
+  role       = aws_iam_role.eks_cluster_role.name
+  policy_arn = "arn:aws:iam::aws:policy/AmazonEKSClusterPolicy"
+}
+
+resource "aws_iam_role_policy_attachment" "vpc_cni_policy" {
+  role       = aws_iam_role.eks_cluster_role.name
+  policy_arn = "arn:aws:iam::aws:policy/AmazonEKSVPCResourceController"
+}
+
+
+resource "aws_eks_node_group" "eks_nodes" {
+  cluster_name    = aws_eks_cluster.eks_cluster.name
+  node_group_name = "fastfood-node-group"
+  node_role_arn   = aws_iam_role.eks_node_role.arn
+  subnet_ids      = concat(aws_subnet.eks_private[*].id, aws_subnet.eks_public[*].id)
+
+  scaling_config {
+    desired_size = 2
+    max_size     = 3
+    min_size     = 1
   }
+
+  depends_on = [aws_eks_cluster.eks_cluster]
+}
+
+resource "aws_iam_role" "eks_node_role" {
+  name = "eks_node_role"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [{
+      Effect    = "Allow",
+      Principal = {
+        Service = "ec2.amazonaws.com"
+      },
+      Action = "sts:AssumeRole"
+    }]
+  })
+}
+
+
+resource "aws_iam_role_policy_attachment" "eks_worker_node_policy" {
+  role       = aws_iam_role.eks_node_role.name
+  policy_arn = "arn:aws:iam::aws:policy/AmazonEKSWorkerNodePolicy"
+}
+
+resource "aws_iam_role_policy_attachment" "eks_cni_policy" {
+  role       = aws_iam_role.eks_node_role.name
+  policy_arn = "arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy"
+}
+
+resource "aws_iam_role_policy_attachment" "ec2_policy" {
+  role       = aws_iam_role.eks_node_role.name
+  policy_arn = "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly"
 }
