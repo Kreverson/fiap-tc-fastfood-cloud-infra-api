@@ -13,7 +13,7 @@ jobs:
   terraform:
     uses: ./.github/workflows/terraform.yml
     with:
-      environment: prod
+      environment: prd
       aws-assume-role-arn: "arn:aws:iam::011528262719:role/github_actions_access"
       aws-region: "us-east-2"
       aws-statefile-s3-bucket: "kreverson-us-east-2-terraform-statefile"
