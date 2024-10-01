@@ -1,8 +1,40 @@
+resource "aws_subnet" "eks_private" {
+  count             = length(var.eks_private_subnet_cidrs)
+  vpc_id            = aws_vpc.main_vpc.id
+  cidr_block        = var.eks_private_subnet_cidrs[count.index]
+  availability_zone = element(var.availability_zones, count.index)
+
+  map_public_ip_on_launch = false
+
+  tags = {
+    Name        = "${var.environment}-eks-private-subnet-${count.index}"
+    Environment = var.environment
+  }
+
+  depends_on = [aws_vpc.main_vpc]
+}
+
+resource "aws_subnet" "eks_public" {
+  count             = length(var.public_subnet_cidrs)
+  vpc_id            = aws_vpc.main_vpc.id
+  cidr_block        = var.public_subnet_cidrs[count.index]
+  availability_zone = element(var.availability_zones, count.index)
+
+  map_public_ip_on_launch = true
+
+  tags = {
+    Name = "${var.environment}-eks-public-subnet-${count.index}"
+    Environment = var.environment
+  }
+
+  depends_on = [aws_vpc.main_vpc]
+}
+
 module "eks" {
   source          = "terraform-aws-modules/eks/aws"
   cluster_name    = var.cluster_name
   cluster_version = "1.21"
-  subnets         = concat(aws_subnet.private_subnet[*].id, aws_subnet.public_subnet[*].id)
+  subnets         = concat(aws_subnet.eks_private[*].id, aws_subnet.eks_public[*].id)
   vpc_id          = aws_vpc.main_vpc.id
 
   node_groups = {
@@ -16,6 +48,6 @@ module "eks" {
 
   tags = {
     Environment = var.environment
-    Project     = "fastfood"
+    Project     = "${var.environment}-fastfood-api"
   }
 }

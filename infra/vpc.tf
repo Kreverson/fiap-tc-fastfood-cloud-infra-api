@@ -9,35 +9,19 @@ resource "aws_vpc" "main_vpc" {
   }
 }
 
-resource "aws_subnet" "private_subnet" {
-  count             = length(var.private_subnet_cidrs)
-  vpc_id            = aws_vpc.main_vpc.id
-  cidr_block        = var.private_subnet_cidrs[count.index]
-  availability_zone = element(var.availability_zones, count.index)
 
-  tags = {
-    Name        = "${var.environment}-private-subnet-${count.index}"
-    Environment = var.environment
-  }
+
+resource "aws_route_table_association" "eks_public_subnets" {
+  count          = length(aws_subnet.eks_public)
+  subnet_id      = aws_subnet.eks_public[count.index].id
+  route_table_id = aws_route_table.public.id
 }
 
-resource "aws_subnet" "public_subnet" {
-  count             = length(var.public_subnet_cidrs)
-  vpc_id            = aws_vpc.main_vpc.id
-  cidr_block        = var.public_subnet_cidrs[count.index]
-  availability_zone = element(var.availability_zones, count.index)
-
-  tags = {
-    Name        = "${var.environment}-public-subnet-${count.index}"
-    Environment = var.environment
-  }
+resource "aws_route_table_association" "eks_private_subnets" {
+  count          = length(aws_subnet.eks_private)
+  subnet_id      = aws_subnet.eks_private[count.index].id
+  route_table_id = aws_route_table.private.id
 }
 
-resource "aws_internet_gateway" "igw" {
-  vpc_id = aws_vpc.main_vpc.id
 
-  tags = {
-    Name        = "${var.environment}-igw"
-    Environment = var.environment
-  }
-}
+

@@ -23,10 +23,16 @@ variable "vpc_cidr_block" {
   type        = string
 }
 
-variable "private_subnet_cidrs" {
-  description = "CIDRs das subnets privadas"
+variable "eks_private_subnet_cidrs" {
+  description = "CIDRs para as subnets privadas usadas pelo EKS"
   type        = list(string)
 }
+
+variable "rds_private_subnet_cidrs" {
+  description = "CIDRs para as subnets privadas usadas pelo RDS"
+  type        = list(string)
+}
+
 
 variable "public_subnet_cidrs" {
   description = "CIDRs das subnets públicas"
