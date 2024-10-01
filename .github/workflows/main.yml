@@ -11,7 +11,6 @@ permissions:
 
 jobs:
   terraform:
-    if: false  # desabilitado temporariamente\
     uses: ./.github/workflows/terraform.yml
     with:
       environment: prod
